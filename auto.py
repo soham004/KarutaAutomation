@@ -46,6 +46,7 @@ options.add_argument('--ignore-certificate-errors')
 options.add_argument('--ignore-ssl-errors')
 if not verbose:
     options.add_argument('log-level=3')
+
 driver = webdriver.Chrome(options=options) 
 stealth(
     driver,
