@@ -6,5 +6,6 @@
     "randomDropDelayMax": 200,
     "karutaPrivateServerTextChannelLink": "https://discord.com/channels/{privateServer}/{karutaTextChannel}",
     "headlessRun": true,
-    "verbose": false
+    "verbose": false,
+    "notificationPath": "noti.wav"
 }

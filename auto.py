@@ -9,6 +9,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import random
 import easyocr
+import requests
+from io import BytesIO
+from PIL import Image
+import numpy as np
+from playsound import playsound
+
 
 print("Starting Bot")
 print("Initialising OCR....")
@@ -32,7 +38,13 @@ randomDropDelayMax = data['randomDropDelayMax']
 url = data['karutaPrivateServerTextChannelLink']
 headlessRun = data['headlessRun']
 verbose = data['verbose']
+notificationPath = data['notificationPath']
 
+def ocr(img, boundingBox):
+    im1 = img.crop(boundingBox)
+    img1 = np.array(im1)
+    results = reader.readtext(img1)
+    return results[0][1]
 
 options = webdriver.ChromeOptions()
 
@@ -61,8 +73,7 @@ stealth(
 driver.get(url)
 
 
-loginEmailField = WebDriverWait(driver, 30).until(
-EC.presence_of_element_located((By.ID, "uid_32")))
+loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
 
 loginEmailField.send_keys(discord_email)
 
@@ -73,7 +84,8 @@ passwordField.send_keys(discord_password)
 
 driver.implicitly_wait(2)
 
-loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/div/form/div[2]/div/div[1]/div[2]/button[2]')))
+# loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/div/form/div[2]/div/div[1]/div[2]/button[2]')))
+loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
 loginButton.click()
 
 
@@ -82,7 +94,7 @@ WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, '
 loop=True
 
 while loop:
-    
+    playsound(notificationPath)
     print("Dropping Cards.....")
 
     ActionChains(driver)\
@@ -90,21 +102,46 @@ while loop:
         .send_keys(Keys.RETURN)\
         .perform()
 
-    time.sleep(5)
+    time.sleep(20)
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
 
     statindex = -1
 
     try:
-        if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != 'Queen\'s Right Leg'):
-            raise Exception("Queen\'s Right Leg stats Not Found")
-        print("Queen\'s Right Leg Stats Found")
+        if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
+            raise Exception("Queen's Right Leg stats Not Found")
+        print("Queen's Right Leg Stats Found")
 
         cardsMsg = messeges[(statindex-1)]
+
+
+        cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
+        print(cardImageUrl)
+
+        cardImageData = requests.get(cardImageUrl).content
+        im = Image.open(BytesIO(cardImageData))
+        cardNum1CropBox = (158, 371, 197, 382)
+        cardNum2CropBox = (432, 371, 471, 382)
+        cardNum3CropBox = (706, 371, 745, 382)
+        cardNum3 = int(ocr(im, cardNum3CropBox))
+        cardNum2 = int(ocr(im, cardNum2CropBox))
+        cardNum1 = int(ocr(im, cardNum1CropBox))
+
+        print(f"Card 1: {cardNum1}")
+        print(f"Card 2: {cardNum2}")
+        print(f"Card 3: {cardNum3}")
+        cardsNumDict = {
+            1:cardNum1,
+            2:cardNum2,
+            3:cardNum3,
+        }
+
         reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+        i=1
         for reactionButton in reactionButtons:
-            print("Found a reaction button")
+            i = i+1
+            print(f"Found reaction button {i}")
         
         droppedStatsMsg = messeges[statindex]
         wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
@@ -113,7 +150,11 @@ while loop:
             1:int(wishStatsElements[1].text.replace('♡','')),
             2:int(wishStatsElements[2].text.replace('♡','')),
         }
-        bestCardIndex = max(wishDict, key=wishDict.get)
+
+        if(min(cardNum1, cardNum2, cardNum3)<1000):
+            bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
+        else:
+            bestCardIndex = max(wishDict, key=wishDict.get)
 
         print(f"Best card is: {bestCardIndex+1}")
         print(f"Clicking {bestCardIndex+1}")
@@ -123,12 +164,33 @@ while loop:
         print(e)
         try:
             cardsMsg = messeges[statindex]
+            cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
+            print(cardImageUrl)
+
+            cardImageData = requests.get(cardImageUrl).content
+            im = Image.open(BytesIO(cardImageData))
+            cardNum1CropBox = (158, 371, 197, 382)
+            cardNum2CropBox = (432, 371, 471, 382)
+            cardNum3CropBox = (706, 371, 745, 382)
+            cardNum3 = int(ocr(im, cardNum3CropBox))
+            cardNum2 = int(ocr(im, cardNum2CropBox))
+            cardNum1 = int(ocr(im, cardNum1CropBox))
+
+            
+            print(f"Card 1: {cardNum1}")
+            print(f"Card 2: {cardNum2}")
+            print(f"Card 3: {cardNum3}")
+            cardsNumDict = {
+                1:cardNum1,
+                2:cardNum2,
+                3:cardNum3,
+            }
+            bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
             reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
             for reactionButton in reactionButtons:
                 print("Found a reaction button")
-            randomIndex = random.randint(0,2)
-            print(f"Clicking {randomIndex+1}")
-            reactionButtons[randomIndex].click()
+            print(f"Clicking {bestCardIndex+1}")
+            reactionButtons[bestCardIndex].click()
         except Exception as e:
             print("Cannot find cards to collect")
     
