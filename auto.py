@@ -3,8 +3,11 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_stealth import stealth
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+import random
 
 
 
@@ -57,11 +60,49 @@ loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By
 loginButton.click()
 
 
-chatText = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div[2]/div/div/div/div/div[3]/div[3]/main/form/div/div[1]/div[2]/div/div[3]')))
+WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
 
-chatText.click()
-chatText.send_keys("kd")
+# # chatText.click()
+# chatText.send_keys("kd")
 
+ActionChains(driver)\
+        .send_keys("kd")\
+        .send_keys(Keys.RETURN)\
+        .perform()
+
+time.sleep(5)
+
+messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
+
+statindex = -1
+try:
+    if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != 'Queen\'s Right Leg'):
+        raise Exception("droppedStatsMsg Not Found")
+    print("droppedStatsMsg Found")
+    cardsMsg = messeges[(statindex-1)]
+    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+    for reactionButton in reactionButtons:
+        print("found a reaction button")
+    droppedStatsMsg = messeges[statindex]
+    wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
+    wishDict = {
+        0:int(wishStatsElements[0].text.replace('♡','')),
+        1:int(wishStatsElements[1].text.replace('♡','')),
+        2:int(wishStatsElements[2].text.replace('♡','')),
+    }
+    bestCardIndex = max(wishDict, key=wishDict.get)
+    print(f"Best card is: {bestCardIndex+1}")
+    print(f"Clicking {bestCardIndex}")
+    reactionButtons[bestCardIndex].click()
+except Exception as e:
+    print(e)
+    cardsMsg = messeges[statindex]
+    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+    for reactionButton in reactionButtons:
+        print("found a reaction button")
+    randomIndex = random.randint(0,2)
+    print(f"Clicking {randomIndex}")
+    reactionButtons[randomIndex].click()
 
 input("Press Enter to quit...")
 
