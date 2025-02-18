@@ -44,7 +44,18 @@ def ocr(img, boundingBox):
     im1 = img.crop(boundingBox)
     img1 = np.array(im1)
     results = reader.readtext(img1)
-    return results[0][1]
+    return results
+
+
+def countdown(t): 
+    
+    while t: 
+        mins, secs = divmod(t, 60) 
+        timer = '{:02d}:{:02d}'.format(mins, secs) 
+        print(timer, end="\r") 
+        time.sleep(1) 
+        t -= 1
+
 
 options = webdriver.ChromeOptions()
 
@@ -121,12 +132,14 @@ while loop:
 
         cardImageData = requests.get(cardImageUrl).content
         im = Image.open(BytesIO(cardImageData))
-        cardNum1CropBox = (158, 371, 197, 382)
-        cardNum2CropBox = (432, 371, 471, 382)
-        cardNum3CropBox = (706, 371, 745, 382)
-        cardNum3 = int(ocr(im, cardNum3CropBox))
-        cardNum2 = int(ocr(im, cardNum2CropBox))
-        cardNum1 = int(ocr(im, cardNum1CropBox))
+        # cardNum1CropBox = (158, 371, 197, 382)
+        # cardNum2CropBox = (432, 371, 471, 382)
+        # cardNum3CropBox = (706, 371, 745, 382)
+        bound = (21,362,808,393)
+        cardnumData = ocr(im, bound)
+        cardNum3 = int(cardnumData[0][1].replace(" ", "").replace(".", ""))
+        cardNum2 = int(cardnumData[1][1].replace(" ", "").replace(".", ""))
+        cardNum1 = int(cardnumData[2][1].replace(" ", "").replace(".", ""))
 
         print(f"Card 1: {cardNum1}")
         print(f"Card 2: {cardNum2}")
@@ -159,6 +172,9 @@ while loop:
                 1:((100000-cardNum2)/10000)+wishDict[1],
                 2:((100000-cardNum3)/10000)+wishDict[2],
             }
+            print("Card 1 Aggregate Points: ", aggregateWishDict[0])
+            print("Card 2 Aggregate Points: ", aggregateWishDict[1])
+            print("Card 3 Aggregate Points: ", aggregateWishDict[2])
             bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
 
         print(f"Best card is: {bestCardIndex+1}")
@@ -177,11 +193,11 @@ while loop:
             cardNum1CropBox = (158, 371, 197, 382)
             cardNum2CropBox = (432, 371, 471, 382)
             cardNum3CropBox = (706, 371, 745, 382)
+
             cardNum3 = int(ocr(im, cardNum3CropBox))
             cardNum2 = int(ocr(im, cardNum2CropBox))
             cardNum1 = int(ocr(im, cardNum1CropBox))
 
-            
             print(f"Card 1: {cardNum1}")
             print(f"Card 2: {cardNum2}")
             print(f"Card 3: {cardNum3}")
@@ -197,10 +213,19 @@ while loop:
             print(f"Clicking {bestCardIndex+1}")
             reactionButtons[bestCardIndex].click()
         except Exception as e:
-            print("Cannot find cards to collect")
+            try:
+                print("Error trying to select random card")
+                reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+                for reactionButton in reactionButtons:
+                    print("Found a reaction button")
+                cardindex = random.randint(0,2)
+                print(f"Clicking {cardindex}")
+                reactionButtons[cardindex].click()
+            except:
+                print("Cannot find cards to collect")
     
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
     print(f"Waiting {waitTime}s for next drop")
-    time.sleep(waitTime)
+    countdown(waitTime)
 
 driver.quit()
