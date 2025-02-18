@@ -154,7 +154,12 @@ while loop:
         if(min(cardNum1, cardNum2, cardNum3)<1000):
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
         else:
-            bestCardIndex = max(wishDict, key=wishDict.get)
+            aggregateWishDict = {
+                0:((100000-cardNum1)/10000)+wishDict[0],
+                1:((100000-cardNum2)/10000)+wishDict[1],
+                2:((100000-cardNum3)/10000)+wishDict[2],
+            }
+            bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
 
         print(f"Best card is: {bestCardIndex+1}")
         print(f"Clicking {bestCardIndex+1}")
