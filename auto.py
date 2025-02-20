@@ -59,7 +59,7 @@ def countdown(t):
         t -= 1
 
 def tprint(string):
-    """Takes a string and prints it with a timestamp prefixt."""
+    """Takes a string and prints it with a timestamp prefix."""
     print('[{}] {}'.format(time.strftime("%Y-%m-%d %H:%M:%S"), string))
 
 options = webdriver.ChromeOptions()
@@ -180,9 +180,9 @@ while loop:
                 1:((100000-cardNum2)/10000)+wishDict[1],
                 2:((100000-cardNum3)/10000)+wishDict[2],
             }
-            tprint("Card 1 Aggregate Points: ", aggregateWishDict[0])
-            tprint("Card 2 Aggregate Points: ", aggregateWishDict[1])
-            tprint("Card 3 Aggregate Points: ", aggregateWishDict[2])
+            tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]))
+            tprint("Card 2 Aggregate Points: {}".format(aggregateWishDict[1]))
+            tprint("Card 3 Aggregate Points: {}".format(aggregateWishDict[2]))
             bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
 
         tprint(f"Best card is: {bestCardIndex+1}")
