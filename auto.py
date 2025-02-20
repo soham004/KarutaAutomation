@@ -108,6 +108,7 @@ loop=True
 
 while loop:
     playsound(notificationPath) if notify else None
+    print("\n\n\n")
     print("Dropping Cards.....")
 
     ActionChains(driver)\
@@ -168,6 +169,7 @@ while loop:
         for key in wishDict:
             print(f"Cars {key+1} Wishlisted: {wishDict[key]}")
         if(min(cardNum1, cardNum2, cardNum3)<1000):
+            print("Found a low print card.")
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
         else:
             aggregateWishDict = {
