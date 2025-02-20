@@ -39,6 +39,8 @@ url = data['karutaPrivateServerTextChannelLink']
 headlessRun = data['headlessRun']
 verbose = data['verbose']
 notificationPath = data['notificationPath']
+notify = data['notify']
+dropToGrabDelay = data['dropToGrabDelay']
 
 def ocr(img, boundingBox):
     im1 = img.crop(boundingBox)
@@ -105,7 +107,7 @@ WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, '
 loop=True
 
 while loop:
-    playsound(notificationPath)
+    playsound(notificationPath) if notify else None
     print("Dropping Cards.....")
 
     ActionChains(driver)\
@@ -113,7 +115,7 @@ while loop:
         .send_keys(Keys.RETURN)\
         .perform()
 
-    time.sleep(20)
+    time.sleep(dropToGrabDelay)
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
 
@@ -137,24 +139,24 @@ while loop:
         # cardNum3CropBox = (706, 371, 745, 382)
         bound = (21,362,808,393)
         cardnumData = ocr(im, bound)
-        cardNum3 = int(cardnumData[0][1].replace(" ", "").replace(".", ""))
-        cardNum2 = int(cardnumData[1][1].replace(" ", "").replace(".", ""))
-        cardNum1 = int(cardnumData[2][1].replace(" ", "").replace(".", ""))
+        cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+        cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+        cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
 
         print(f"Card 1: {cardNum1}")
         print(f"Card 2: {cardNum2}")
         print(f"Card 3: {cardNum3}")
         cardsNumDict = {
-            1:cardNum1,
-            2:cardNum2,
-            3:cardNum3,
+            0:cardNum1,
+            1:cardNum2,
+            2:cardNum3,
         }
 
         reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
         i=1
         for reactionButton in reactionButtons:
-            i = i+1
             print(f"Found reaction button {i}")
+            i = i+1
         
         droppedStatsMsg = messeges[statindex]
         wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
@@ -163,7 +165,8 @@ while loop:
             1:int(wishStatsElements[1].text.replace('♡','')),
             2:int(wishStatsElements[2].text.replace('♡','')),
         }
-
+        for key in wishDict:
+            print(f"Cars {key+1} Wishlisted: {wishDict[key]}")
         if(min(cardNum1, cardNum2, cardNum3)<1000):
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
         else:
@@ -180,6 +183,14 @@ while loop:
         print(f"Best card is: {bestCardIndex+1}")
         print(f"Clicking {bestCardIndex+1}")
         reactionButtons[bestCardIndex].click()
+        if (cardsNumDict[bestCardIndex]>60000):
+            time.sleep(5)
+            print("Adding burn tag")
+            ActionChains(driver)\
+                .send_keys("kt burn")\
+                .send_keys(Keys.RETURN)\
+                .perform()
+            
     
     except Exception as e:
         print(e)
@@ -190,13 +201,11 @@ while loop:
 
             cardImageData = requests.get(cardImageUrl).content
             im = Image.open(BytesIO(cardImageData))
-            cardNum1CropBox = (158, 371, 197, 382)
-            cardNum2CropBox = (432, 371, 471, 382)
-            cardNum3CropBox = (706, 371, 745, 382)
-
-            cardNum3 = int(ocr(im, cardNum3CropBox))
-            cardNum2 = int(ocr(im, cardNum2CropBox))
-            cardNum1 = int(ocr(im, cardNum1CropBox))
+            bound = (21,362,808,393)
+            cardnumData = ocr(im, bound)
+            cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
 
             print(f"Card 1: {cardNum1}")
             print(f"Card 2: {cardNum2}")
@@ -212,17 +221,51 @@ while loop:
                 print("Found a reaction button")
             print(f"Clicking {bestCardIndex+1}")
             reactionButtons[bestCardIndex].click()
+            if (cardsNumDict[bestCardIndex]>60000):
+                time.sleep(5)
+                print("Adding burn tag")
+                ActionChains(driver)\
+                    .send_keys("kt burn")\
+                    .send_keys(Keys.RETURN)\
+                    .perform()
         except Exception as e:
             try:
-                print("Error trying to select random card")
+                print("Error, trying to select random card")
+                cardsMsg = messeges[(statindex-1)]
                 reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                 for reactionButton in reactionButtons:
                     print("Found a reaction button")
                 cardindex = random.randint(0,2)
                 print(f"Clicking {cardindex}")
                 reactionButtons[cardindex].click()
-            except:
-                print("Cannot find cards to collect")
+                if (cardsNumDict[cardindex]>60000):
+                    time.sleep(5)
+                    print("Adding burn tag")
+                    ActionChains(driver)\
+                        .send_keys("kt burn")\
+                        .send_keys(Keys.RETURN)\
+                        .perform()
+                    
+            except Exception as e:
+                try:
+                    print("Error, trying to select random card")
+                    cardsMsg = messeges[(statindex)]
+                    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+                    for reactionButton in reactionButtons:
+                        print("Found a reaction button")
+                    cardindex = random.randint(0,2)
+                    print(f"Clicking {cardindex}")
+                    reactionButtons[cardindex].click()
+                    if (cardsNumDict[cardindex]>60000):
+                        time.sleep(5)
+                        print("Adding burn tag")
+                        ActionChains(driver)\
+                            .send_keys("kt burn")\
+                            .send_keys(Keys.RETURN)\
+                            .perform()
+                except Exception as e:
+                    print(e)
+                    print("Cannot find cards to collect")
     
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
     print(f"Waiting {waitTime}s for next drop")

@@ -1,11 +1,13 @@
 {
     "email": "someone@example.com",
     "password": "password",
+    "dropToGrabDelay": 10,
     "dropDelay": 1820,
     "randomDropDelayMin": 30,
     "randomDropDelayMax": 200,
     "karutaPrivateServerTextChannelLink": "https://discord.com/channels/{privateServer}/{karutaTextChannel}",
     "headlessRun": true,
     "verbose": false,
-    "notificationPath": "noti.wav"
+    "notificationPath": "noti.wav",
+    "notify": true
 }
