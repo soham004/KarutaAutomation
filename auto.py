@@ -58,6 +58,9 @@ def countdown(t):
         time.sleep(1) 
         t -= 1
 
+def tprint(string):
+    """Takes a string and prints it with a timestamp prefixt."""
+    print('[{}] {}'.format(time.strftime("%Y-%m-%d %H:%M:%S"), string))
 
 options = webdriver.ChromeOptions()
 
@@ -109,7 +112,7 @@ loop=True
 while loop:
     playsound(notificationPath) if notify else None
     print("\n\n\n")
-    print("Dropping Cards.....")
+    tprint("Dropping Cards.....")
 
     ActionChains(driver)\
         .send_keys("kd")\
@@ -125,13 +128,13 @@ while loop:
     try:
         if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
             raise Exception("Queen's Right Leg stats Not Found")
-        print("Queen's Right Leg Stats Found")
+        tprint("Queen's Right Leg Stats Found")
 
         cardsMsg = messeges[(statindex-1)]
 
 
         cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
-        print(cardImageUrl)
+        tprint(f"Card Image Url - {cardImageUrl}")
 
         cardImageData = requests.get(cardImageUrl).content
         im = Image.open(BytesIO(cardImageData))
@@ -144,9 +147,9 @@ while loop:
         cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
         cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
 
-        print(f"Card 1: {cardNum1}")
-        print(f"Card 2: {cardNum2}")
-        print(f"Card 3: {cardNum3}")
+        tprint(f"Card 1: {cardNum1}")
+        tprint(f"Card 2: {cardNum2}")
+        tprint(f"Card 3: {cardNum3}")
         cardsNumDict = {
             0:cardNum1,
             1:cardNum2,
@@ -156,9 +159,9 @@ while loop:
         reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
         i=1
         for reactionButton in reactionButtons:
-            print(f"Found reaction button {i}")
+            tprint(f"Found reaction button {i}")
             i = i+1
-        
+        print("")
         droppedStatsMsg = messeges[statindex]
         wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
         wishDict = {
@@ -167,9 +170,9 @@ while loop:
             2:int(wishStatsElements[2].text.replace('♡','')),
         }
         for key in wishDict:
-            print(f"Cars {key+1} Wishlisted: {wishDict[key]}")
+            tprint(f"Cars {key+1} Wishlisted: {wishDict[key]}")
         if(min(cardNum1, cardNum2, cardNum3)<1000):
-            print("Found a low print card.")
+            tprint("Found a low print card.")
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
         else:
             aggregateWishDict = {
@@ -177,17 +180,17 @@ while loop:
                 1:((100000-cardNum2)/10000)+wishDict[1],
                 2:((100000-cardNum3)/10000)+wishDict[2],
             }
-            print("Card 1 Aggregate Points: ", aggregateWishDict[0])
-            print("Card 2 Aggregate Points: ", aggregateWishDict[1])
-            print("Card 3 Aggregate Points: ", aggregateWishDict[2])
+            tprint("Card 1 Aggregate Points: ", aggregateWishDict[0])
+            tprint("Card 2 Aggregate Points: ", aggregateWishDict[1])
+            tprint("Card 3 Aggregate Points: ", aggregateWishDict[2])
             bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
 
-        print(f"Best card is: {bestCardIndex+1}")
-        print(f"Clicking {bestCardIndex+1}")
+        tprint(f"Best card is: {bestCardIndex+1}")
+        tprint(f"Clicking {bestCardIndex+1}")
         reactionButtons[bestCardIndex].click()
         if (cardsNumDict[bestCardIndex]>60000):
             time.sleep(5)
-            print("Adding burn tag")
+            tprint("Adding burn tag")
             ActionChains(driver)\
                 .send_keys("kt burn")\
                 .send_keys(Keys.RETURN)\
@@ -195,11 +198,11 @@ while loop:
             
     
     except Exception as e:
-        print(e)
+        tprint(e)
         try:
             cardsMsg = messeges[statindex]
             cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
-            print(cardImageUrl)
+            tprint(f"Card Image Url - {cardImageUrl}")
 
             cardImageData = requests.get(cardImageUrl).content
             im = Image.open(BytesIO(cardImageData))
@@ -209,9 +212,9 @@ while loop:
             cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
             cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
 
-            print(f"Card 1: {cardNum1}")
-            print(f"Card 2: {cardNum2}")
-            print(f"Card 3: {cardNum3}")
+            tprint(f"Card 1: {cardNum1}")
+            tprint(f"Card 2: {cardNum2}")
+            tprint(f"Card 3: {cardNum3}")
             cardsNumDict = {
                 1:cardNum1,
                 2:cardNum2,
@@ -220,29 +223,29 @@ while loop:
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
             reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
             for reactionButton in reactionButtons:
-                print("Found a reaction button")
-            print(f"Clicking {bestCardIndex+1}")
+                tprint("Found a reaction button")
+            tprint(f"Clicking {bestCardIndex+1}")
             reactionButtons[bestCardIndex].click()
             if (cardsNumDict[bestCardIndex]>60000):
                 time.sleep(5)
-                print("Adding burn tag")
+                tprint("Adding burn tag")
                 ActionChains(driver)\
                     .send_keys("kt burn")\
                     .send_keys(Keys.RETURN)\
                     .perform()
         except Exception as e:
             try:
-                print("Error, trying to select random card")
+                tprint("Error, trying to select random card")
                 cardsMsg = messeges[(statindex-1)]
                 reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                 for reactionButton in reactionButtons:
-                    print("Found a reaction button")
+                    tprint("Found a reaction button")
                 cardindex = random.randint(0,2)
-                print(f"Clicking {cardindex}")
+                tprint(f"Clicking {cardindex}")
                 reactionButtons[cardindex].click()
                 if (cardsNumDict[cardindex]>60000):
                     time.sleep(5)
-                    print("Adding burn tag")
+                    tprint("Adding burn tag")
                     ActionChains(driver)\
                         .send_keys("kt burn")\
                         .send_keys(Keys.RETURN)\
@@ -250,13 +253,13 @@ while loop:
                     
             except Exception as e:
                 try:
-                    print("Error, trying to select random card")
+                    tprint("Error, trying to select random card")
                     cardsMsg = messeges[(statindex)]
                     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                     for reactionButton in reactionButtons:
-                        print("Found a reaction button")
+                        tprint("Found a reaction button")
                     cardindex = random.randint(0,2)
-                    print(f"Clicking {cardindex}")
+                    tprint(f"Clicking {cardindex}")
                     reactionButtons[cardindex].click()
                     if (cardsNumDict[cardindex]>60000):
                         time.sleep(5)
@@ -266,11 +269,11 @@ while loop:
                             .send_keys(Keys.RETURN)\
                             .perform()
                 except Exception as e:
-                    print(e)
-                    print("Cannot find cards to collect")
+                    tprint(e)
+                    tprint("Cannot find cards to collect")
     
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
-    print(f"Waiting {waitTime}s for next drop")
+    tprint(f"Waiting {waitTime}s for next drop")
     countdown(waitTime)
 
 driver.quit()
