@@ -107,7 +107,7 @@ driver.implicitly_wait(2)
 
 # loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/div/form/div[2]/div/div[1]/div[2]/button[2]')))
 loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
-loginButton.click()
+driver.execute_script("arguments[0].click();", loginButton)
 
 tprint("Logged in")
 
@@ -125,7 +125,6 @@ while loop:
         .send_keys(Keys.RETURN)\
         .perform()
 
-    time.sleep(dropToGrabDelay)
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
 
@@ -171,9 +170,9 @@ while loop:
         droppedStatsMsg = messeges[statindex]
         wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
         wishDict = {
-            0:int(wishStatsElements[0].text.replace('♡','')),
-            1:int(wishStatsElements[1].text.replace('♡','')),
-            2:int(wishStatsElements[2].text.replace('♡','')),
+            0:int(wishStatsElements[0].text.replace('♡','').replace(',','')),
+            1:int(wishStatsElements[1].text.replace('♡','').replace(',','')),
+            2:int(wishStatsElements[2].text.replace('♡','').replace(',','')),
         }
         for key in wishDict:
             tprint(f"Cars {key+1} Wishlisted: {wishDict[key]}")
@@ -193,6 +192,7 @@ while loop:
 
         tprint(f"Best card is: {bestCardIndex+1}")
         tprint(f"Clicking {bestCardIndex+1}")
+        time.sleep(dropToGrabDelay)
         reactionButtons[bestCardIndex].click()
         if (cardsNumDict[bestCardIndex]>60000):
             time.sleep(5)
