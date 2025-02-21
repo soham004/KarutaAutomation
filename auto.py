@@ -88,6 +88,11 @@ stealth(
 
 driver.get(url)
 
+try:
+    continueButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/section/div[2]/button[2]/div')))
+    continueButton.click()
+except:
+    None
 
 loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
 
@@ -104,8 +109,9 @@ driver.implicitly_wait(2)
 loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
 loginButton.click()
 
+tprint("Logged in")
 
-WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
+WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
 
 loop=True
 
