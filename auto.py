@@ -124,7 +124,8 @@ while loop:
         .send_keys("kd")\
         .send_keys(Keys.RETURN)\
         .perform()
-
+    
+    time.sleep(dropToGrabDelay)
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
 
@@ -192,7 +193,6 @@ while loop:
 
         tprint(f"Best card is: {bestCardIndex+1}")
         tprint(f"Clicking {bestCardIndex+1}")
-        time.sleep(dropToGrabDelay)
         reactionButtons[bestCardIndex].click()
         if (cardsNumDict[bestCardIndex]>60000):
             time.sleep(5)
