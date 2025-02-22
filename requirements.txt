@@ -1,5 +1,7 @@
-easyocr
 pillow
 numpy
+easyocr 
 selenuim
 selenium-stealth
+playsound==1.2.2 
+requests
