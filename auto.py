@@ -1,3 +1,4 @@
+print("Importing Libraries....")
 import json
 import time
 from selenium import webdriver
@@ -88,11 +89,7 @@ stealth(
 
 driver.get(url)
 
-try:
-    continueButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/section/div[2]/button[2]/div')))
-    continueButton.click()
-except:
-    None
+
 
 loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
 
