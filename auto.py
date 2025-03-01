@@ -130,7 +130,7 @@ while loop:
 
     try:
         if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
-            raise Exception("Queen's Right Leg stats Not Found")
+            raise Exception
         tprint("Queen's Right Leg Stats Found")
 
         cardsMsg = messeges[(statindex-1)]
@@ -201,7 +201,7 @@ while loop:
             
     
     except Exception as e:
-        tprint(e)
+        tprint("Queen's Right Leg stats Not Found")
         try:
             cardsMsg = messeges[statindex]
             cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
@@ -219,9 +219,9 @@ while loop:
             tprint(f"Card 2: {cardNum2}")
             tprint(f"Card 3: {cardNum3}")
             cardsNumDict = {
-                1:cardNum1,
-                2:cardNum2,
-                3:cardNum3,
+                0:cardNum1,
+                1:cardNum2,
+                2:cardNum3,
             }
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
             reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
@@ -238,7 +238,7 @@ while loop:
                     .perform()
         except Exception as e:
             try:
-                tprint("Error, trying to select random card")
+                tprint("Error, trying to select best card")
                 cardsMsg = messeges[(statindex-1)]
                 reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                 for reactionButton in reactionButtons:
@@ -256,7 +256,7 @@ while loop:
                     
             except Exception as e:
                 try:
-                    tprint("Error, trying to select random card")
+                    tprint("Error, trying to select random card in second last message")
                     cardsMsg = messeges[(statindex)]
                     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                     for reactionButton in reactionButtons:
