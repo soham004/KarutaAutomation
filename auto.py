@@ -182,9 +182,12 @@ while loop:
         cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
         tprint(f"Card Image Url - {cardImageUrl}")
 
-        cardImageData = requests.get(cardImageUrl).content
-        im = cv2.imread(BytesIO(cardImageData))
+        resp = requests.get(cardImageUrl, stream=True).raw
+        im = np.asarray(bytearray(resp.read()), dtype="uint8")
+        im = cv2.imdecode(im, cv2.IMREAD_COLOR)
+
         cardnumData = ocr(im)
+
         try:
             cardNum1 = cardnumData[0]
         except IndexError:
@@ -254,9 +257,10 @@ while loop:
             cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
             tprint(f"Card Image Url - {cardImageUrl}")
 
-            cardImageData = requests.get(cardImageUrl).content
-            cardImageData = requests.get(cardImageUrl).content
-            im = cv2.imread(BytesIO(cardImageData))
+            resp = requests.get(cardImageUrl, stream=True).raw
+            im = np.asarray(bytearray(resp.read()), dtype="uint8")
+            im = cv2.imdecode(im, cv2.IMREAD_COLOR)
+
             cardnumData = ocr(im)
             try:
                 cardNum1 = cardnumData[0]
