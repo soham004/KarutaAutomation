@@ -1,3 +1,16 @@
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+print(bcolors.OKGREEN+"Importing Packages....")
+
 import json
 import time
 from selenium import webdriver
@@ -15,8 +28,9 @@ from playsound import playsound
 import cv2
 
 
-print("Starting Bot")
-print("Initialising OCR....")
+
+print(bcolors.OKGREEN+"Starting Bot")
+print(bcolors.OKGREEN+"Initialising OCR....")
 reader = easyocr.Reader(['en'],gpu=False, verbose=False)
 
 print("Reading Config....")
@@ -102,9 +116,9 @@ def countdown(t):
         time.sleep(1) 
         t -= 1
 
-def tprint(string):
+def tprint(string, colourCode=bcolors.ENDC):
     """Takes a string and prints it with a timestamp prefix."""
-    print('[{}] {}'.format(time.strftime("%Y-%m-%d %H:%M:%S"), string))
+    print(colourCode , '[{}] {}'.format(time.strftime("%Y-%m-%d %H:%M:%S") , string))
 
 options = webdriver.ChromeOptions()
 
@@ -148,15 +162,155 @@ driver.implicitly_wait(2)
 loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
 loginButton.click()
 
+tprint("Logged in", colourCode=bcolors.OKGREEN)
 
 WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
 
 loop=True
 
+
+def ocrGrabFromSecondLastWithRightLeg(statindex):
+
+    if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
+            raise Exception("Queen's Right Leg stats Not Found")
+    tprint("Queen's Right Leg Stats Found", colourCode=bcolors.OKGREEN)
+
+    cardsMsg = messeges[(statindex-1)]
+
+
+    cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
+    tprint(f"Card Image Url - {cardImageUrl}", colourCode=bcolors.OKBLUE)
+
+    resp = requests.get(cardImageUrl, stream=True).raw
+    im = np.asarray(bytearray(resp.read()), dtype="uint8")
+    im = cv2.imdecode(im, cv2.IMREAD_COLOR)
+
+    cardnumData = ocr(im)
+
+    try:
+        cardNum1 = cardnumData[0]
+    except IndexError:
+        cardNum1 = 1
+    try:
+        cardNum2 = cardnumData[1]
+    except IndexError:
+        cardNum2 = 1
+    try:
+        cardNum3 = cardnumData[2]
+    except IndexError:
+        cardNum3 = 1
+    tprint(f"Card 1: {cardNum1}")
+    tprint(f"Card 2: {cardNum2}")
+    tprint(f"Card 3: {cardNum3}")
+    cardsNumDict = {
+        0:cardNum1,
+        1:cardNum2,
+        2:cardNum3,
+    }
+
+    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+    i=1
+    for reactionButton in reactionButtons:
+        tprint(f"Found reaction button {i}", colourCode=bcolors.OKGREEN)
+        i = i+1
+    print("")
+    droppedStatsMsg = messeges[statindex]
+    wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
+    wishDict = {
+        0:int(wishStatsElements[0].text.replace('♡','')),
+        1:int(wishStatsElements[1].text.replace('♡','')),
+        2:int(wishStatsElements[2].text.replace('♡','')),
+    }
+    for key in wishDict:
+        tprint(f"Cars {key+1} Wishlisted: {wishDict[key]}", colourCode=bcolors.OKGREEN)
+    if(min(cardNum1, cardNum2, cardNum3)<1000):
+        tprint("Found a low print card.", colourCode=bcolors.OKBLUE)
+        bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
+    else:
+        aggregateWishDict = {
+            0:((100000-cardNum1)/10000)+wishDict[0],
+            1:((100000-cardNum2)/10000)+wishDict[1],
+            2:((100000-cardNum3)/10000)+wishDict[2],
+        }
+        tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]), colourCode=bcolors.OKGREEN)
+        tprint("Card 2 Aggregate Points: {}".format(aggregateWishDict[1]), colourCode=bcolors.OKGREEN)
+        tprint("Card 3 Aggregate Points: {}".format(aggregateWishDict[2]), colourCode=bcolors.OKGREEN)
+        bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
+
+    tprint(f"Best card is: {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
+    tprint(f"Clicking {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
+    reactionButtons[bestCardIndex].click()
+    if (cardsNumDict[bestCardIndex]>60000):
+        time.sleep(5)
+        tprint("Adding burn tag", colourCode=bcolors.WARNING)
+        ActionChains(driver)\
+            .send_keys("kt burn")\
+            .send_keys(Keys.RETURN)\
+            .perform()
+
+def ocrGrabWithoutRightLeg(statindex):
+    cardsMsg = messeges[statindex]
+    cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
+    tprint(f"Card Image Url - {cardImageUrl}", colourCode=bcolors.OKBLUE)
+
+    resp = requests.get(cardImageUrl, stream=True).raw
+    im = np.asarray(bytearray(resp.read()), dtype="uint8")
+    im = cv2.imdecode(im, cv2.IMREAD_COLOR)
+
+    cardnumData = ocr(im)
+    try:
+        cardNum1 = cardnumData[0]
+    except IndexError:
+        cardNum1 = 1
+    try:
+        cardNum2 = cardnumData[1]
+    except IndexError:
+        cardNum2 = 1
+    try:
+        cardNum3 = cardnumData[2]
+    except IndexError:
+        cardNum3 = 1
+
+    tprint(f"Card 1: {cardNum1}", colourCode=bcolors.OKGREEN)
+    tprint(f"Card 2: {cardNum2}", colourCode=bcolors.OKGREEN)
+    tprint(f"Card 3: {cardNum3}", colourCode=bcolors.OKGREEN)
+    cardsNumDict = {
+        0:cardNum1,
+        1:cardNum2,
+        2:cardNum3,
+    }
+    bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
+    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+    i=1
+    for reactionButton in reactionButtons:
+        tprint(f"Found reaction button {i}", colourCode=bcolors.OKGREEN)
+        i = i+1
+    
+    tprint(f"Best card is: {bestCardIndex+1} with {cardsNumDict[bestCardIndex]} print", colourCode=bcolors.OKBLUE)
+    tprint(f"Clicking {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
+    reactionButtons[bestCardIndex].click()
+    if (cardsNumDict[bestCardIndex]>60000):
+        time.sleep(5)
+        tprint("Adding burn tag", colourCode=bcolors.WARNING)
+        ActionChains(driver)\
+            .send_keys("kt burn")\
+            .send_keys(Keys.RETURN)\
+            .perform()
+
+def randomGrab(statindex):
+    cardsMsg = messeges[statindex]
+    cardsMsg = messeges[(statindex)]
+    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
+    for reactionButton in reactionButtons:
+        tprint("Found a reaction button", colourCode=bcolors.OKGREEN)
+    cardindex = random.randint(0,2)
+    tprint(f"Clicking {cardindex}", colourCode=bcolors.WARNING)
+    reactionButtons[cardindex].click()
+
 while loop:
     playsound(notificationPath) if notify else None
     print("\n\n\n")
-    tprint("Dropping Cards.....")
+    tprint("Dropping Cards.....", colourCode=bcolors.OKGREEN)
 
     ActionChains(driver)\
         .send_keys("kd")\
@@ -170,173 +324,32 @@ while loop:
     statindex = -1
 
     try:
-        if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
-            raise Exception("Queen's Right Leg stats Not Found")
-        tprint("Queen's Right Leg Stats Found")
-
-        cardsMsg = messeges[(statindex-1)]
-
-
-        cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
-        tprint(f"Card Image Url - {cardImageUrl}")
-
-        resp = requests.get(cardImageUrl, stream=True).raw
-        im = np.asarray(bytearray(resp.read()), dtype="uint8")
-        im = cv2.imdecode(im, cv2.IMREAD_COLOR)
-
-        cardnumData = ocr(im)
-
-        try:
-            cardNum1 = cardnumData[0]
-        except IndexError:
-            cardNum1 = 1
-        try:
-            cardNum2 = cardnumData[1]
-        except IndexError:
-            cardNum2 = 1
-        try:
-            cardNum3 = cardnumData[2]
-        except IndexError:
-            cardNum3 = 1
-        tprint(f"Card 1: {cardNum1}")
-        tprint(f"Card 2: {cardNum2}")
-        tprint(f"Card 3: {cardNum3}")
-        cardsNumDict = {
-            0:cardNum1,
-            1:cardNum2,
-            2:cardNum3,
-        }
-
-        reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
-        i=1
-        for reactionButton in reactionButtons:
-            tprint(f"Found reaction button {i}")
-            i = i+1
-        print("")
-        droppedStatsMsg = messeges[statindex]
-        wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
-        wishDict = {
-            0:int(wishStatsElements[0].text.replace('♡','')),
-            1:int(wishStatsElements[1].text.replace('♡','')),
-            2:int(wishStatsElements[2].text.replace('♡','')),
-        }
-        for key in wishDict:
-            tprint(f"Cars {key+1} Wishlisted: {wishDict[key]}")
-        if(min(cardNum1, cardNum2, cardNum3)<1000):
-            tprint("Found a low print card.")
-            bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
-        else:
-            aggregateWishDict = {
-                0:((100000-cardNum1)/10000)+wishDict[0],
-                1:((100000-cardNum2)/10000)+wishDict[1],
-                2:((100000-cardNum3)/10000)+wishDict[2],
-            }
-            tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]))
-            tprint("Card 2 Aggregate Points: {}".format(aggregateWishDict[1]))
-            tprint("Card 3 Aggregate Points: {}".format(aggregateWishDict[2]))
-            bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
-
-        tprint(f"Best card is: {bestCardIndex+1}")
-        tprint(f"Clicking {bestCardIndex+1}")
-        reactionButtons[bestCardIndex].click()
-        if (cardsNumDict[bestCardIndex]>60000):
-            time.sleep(5)
-            tprint("Adding burn tag")
-            ActionChains(driver)\
-                .send_keys("kt burn")\
-                .send_keys(Keys.RETURN)\
-                .perform()
-            
-    
+        ocrGrabFromSecondLastWithRightLeg(statindex)
     except Exception as e:
-        tprint(e)
+        tprint(e, colourCode=bcolors.FAIL)
         try:
-            cardsMsg = messeges[statindex]
-            cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
-            tprint(f"Card Image Url - {cardImageUrl}")
-
-            resp = requests.get(cardImageUrl, stream=True).raw
-            im = np.asarray(bytearray(resp.read()), dtype="uint8")
-            im = cv2.imdecode(im, cv2.IMREAD_COLOR)
-
-            cardnumData = ocr(im)
-            try:
-                cardNum1 = cardnumData[0]
-            except IndexError:
-                cardNum1 = 1
-            try:
-                cardNum2 = cardnumData[1]
-            except IndexError:
-                cardNum2 = 1
-            try:
-                cardNum3 = cardnumData[2]
-            except IndexError:
-                cardNum3 = 1
-
-            tprint(f"Card 1: {cardNum1}")
-            tprint(f"Card 2: {cardNum2}")
-            tprint(f"Card 3: {cardNum3}")
-            cardsNumDict = {
-                1:cardNum1,
-                2:cardNum2,
-                3:cardNum3,
-            }
-            bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
-            reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
-            for reactionButton in reactionButtons:
-                tprint("Found a reaction button")
-            tprint(f"Clicking {bestCardIndex+1}")
-            reactionButtons[bestCardIndex].click()
-            if (cardsNumDict[bestCardIndex]>60000):
-                time.sleep(5)
-                tprint("Adding burn tag")
-                ActionChains(driver)\
-                    .send_keys("kt burn")\
-                    .send_keys(Keys.RETURN)\
-                    .perform()
+            tprint("Trying to select card in last msg", colourCode=bcolors.WARNING)
+            ocrGrabWithoutRightLeg(statindex) # Ocr Grab from last element
         except Exception as e:
-            tprint(e)
             try:
-                tprint("Error, trying to select random card in second last msg")
-                cardsMsg = messeges[(statindex-1)]
-                reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
-                for reactionButton in reactionButtons:
-                    tprint("Found a reaction button")
-                cardindex = random.randint(0,2)
-                tprint(f"Clicking {cardindex}")
-                reactionButtons[cardindex].click()
-                if (cardsNumDict[cardindex]>60000):
-                    time.sleep(5)
-                    tprint("Adding burn tag")
-                    ActionChains(driver)\
-                        .send_keys("kt burn")\
-                        .send_keys(Keys.RETURN)\
-                        .perform()
-                    
+                tprint("Error! Trying to select card in second last msg", colourCode=bcolors.WARNING)
+                ocrGrabWithoutRightLeg((statindex-1)) # Ocr Grab from second last element
             except Exception as e:
                 tprint(e)
                 try:
-                    tprint("Error, trying to select random card in last msg")
-                    cardsMsg = messeges[(statindex)]
-                    reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
-                    for reactionButton in reactionButtons:
-                        tprint("Found a reaction button")
-                    cardindex = random.randint(0,2)
-                    tprint(f"Clicking {cardindex}")
-                    reactionButtons[cardindex].click()
-                    if (cardsNumDict[cardindex]>60000):
-                        time.sleep(5)
-                        print("Adding burn tag")
-                        ActionChains(driver)\
-                            .send_keys("kt burn")\
-                            .send_keys(Keys.RETURN)\
-                            .perform()
+                    tprint("Error! Trying to select random card in second last msg", colourCode=bcolors.WARNING)
+                    randomGrab(statindex-1)
                 except Exception as e:
                     tprint(e)
-                    tprint("Cannot find cards to collect")
+                    try:
+                        tprint("Error, trying to select random card in last msg", colourCode=bcolors.WARNING)
+                        randomGrab(statindex)
+                    except Exception as e:
+                        tprint(e)
+                        tprint("Cannot find cards to collect", colourCode=bcolors.FAIL)
     
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
-    tprint(f"Waiting {waitTime}s for next drop")
+    tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
     countdown(waitTime)
 
 driver.quit()
