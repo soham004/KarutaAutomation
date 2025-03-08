@@ -146,7 +146,6 @@ stealth(
 
 driver.get(url)
 
-
 loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
 
 loginEmailField.send_keys(discord_email)
