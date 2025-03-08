@@ -1,4 +1,3 @@
-print("Importing Libraries....")
 import json
 import time
 from selenium import webdriver
@@ -15,6 +14,7 @@ from io import BytesIO
 from PIL import Image
 import numpy as np
 from playsound import playsound
+import cv2
 
 
 print("Starting Bot")
@@ -44,9 +44,19 @@ notify = data['notify']
 dropToGrabDelay = data['dropToGrabDelay']
 
 def ocr(img, boundingBox):
-    im1 = img.crop(boundingBox)
-    img1 = np.array(im1)
-    results = reader.readtext(img1)
+    img1 = np.array(img.crop(boundingBox))
+
+    gray = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
+
+    # Apply thresholding (binary inversion)
+    _, thresh = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
+    # Apply morphological operations to remove noise
+    kernel = np.ones((1, 1), np.uint8)
+    processed_img = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+
+    
+    results = reader.readtext(processed_img, allowlist='0123456789 ', min_size = 5)
+
     return results
 
 
@@ -90,7 +100,6 @@ stealth(
 driver.get(url)
 
 
-
 loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
 
 loginEmailField.send_keys(discord_email)
@@ -104,11 +113,10 @@ driver.implicitly_wait(2)
 
 # loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/div/form/div[2]/div/div[1]/div[2]/button[2]')))
 loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
-driver.execute_script("arguments[0].click();", loginButton)
+loginButton.click()
 
-tprint("Logged in")
 
-WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
+WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
 
 loop=True
 
@@ -121,7 +129,7 @@ while loop:
         .send_keys("kd")\
         .send_keys(Keys.RETURN)\
         .perform()
-    
+
     time.sleep(dropToGrabDelay)
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
@@ -130,7 +138,7 @@ while loop:
 
     try:
         if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
-            raise Exception
+            raise Exception("Queen's Right Leg stats Not Found")
         tprint("Queen's Right Leg Stats Found")
 
         cardsMsg = messeges[(statindex-1)]
@@ -144,12 +152,20 @@ while loop:
         # cardNum1CropBox = (158, 371, 197, 382)
         # cardNum2CropBox = (432, 371, 471, 382)
         # cardNum3CropBox = (706, 371, 745, 382)
-        bound = (21,362,808,393)
+        bound = (100,362,800,393)
         cardnumData = ocr(im, bound)
-        cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
-        cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
-        cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
-
+        try:
+            cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+        except IndexError:
+            cardNum1 = 1
+        try:
+            cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+        except IndexError:
+            cardNum2 = 1
+        try:
+            cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+        except IndexError:
+            cardNum3 = 1
         tprint(f"Card 1: {cardNum1}")
         tprint(f"Card 2: {cardNum2}")
         tprint(f"Card 3: {cardNum3}")
@@ -168,9 +184,9 @@ while loop:
         droppedStatsMsg = messeges[statindex]
         wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
         wishDict = {
-            0:int(wishStatsElements[0].text.replace('♡','').replace(',','')),
-            1:int(wishStatsElements[1].text.replace('♡','').replace(',','')),
-            2:int(wishStatsElements[2].text.replace('♡','').replace(',','')),
+            0:int(wishStatsElements[0].text.replace('♡','')),
+            1:int(wishStatsElements[1].text.replace('♡','')),
+            2:int(wishStatsElements[2].text.replace('♡','')),
         }
         for key in wishDict:
             tprint(f"Cars {key+1} Wishlisted: {wishDict[key]}")
@@ -201,7 +217,7 @@ while loop:
             
     
     except Exception as e:
-        tprint("Queen's Right Leg stats Not Found")
+        tprint(e)
         try:
             cardsMsg = messeges[statindex]
             cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
@@ -209,19 +225,28 @@ while loop:
 
             cardImageData = requests.get(cardImageUrl).content
             im = Image.open(BytesIO(cardImageData))
-            bound = (21,362,808,393)
+            bound = (100,362,800,393)
             cardnumData = ocr(im, bound)
-            cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
-            cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
-            cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            try:
+                cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            except IndexError:
+                cardNum1 = 1
+            try:
+                cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            except IndexError:
+                cardNum2 = 1
+            try:
+                cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            except IndexError:
+                cardNum3 = 1
 
             tprint(f"Card 1: {cardNum1}")
             tprint(f"Card 2: {cardNum2}")
             tprint(f"Card 3: {cardNum3}")
             cardsNumDict = {
-                0:cardNum1,
-                1:cardNum2,
-                2:cardNum3,
+                1:cardNum1,
+                2:cardNum2,
+                3:cardNum3,
             }
             bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
             reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
@@ -238,7 +263,7 @@ while loop:
                     .perform()
         except Exception as e:
             try:
-                tprint("Error, trying to select best card")
+                tprint("Error, trying to select random card")
                 cardsMsg = messeges[(statindex-1)]
                 reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                 for reactionButton in reactionButtons:
@@ -256,7 +281,7 @@ while loop:
                     
             except Exception as e:
                 try:
-                    tprint("Error, trying to select random card in second last message")
+                    tprint("Error, trying to select random card")
                     cardsMsg = messeges[(statindex)]
                     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                     for reactionButton in reactionButtons:

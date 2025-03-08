@@ -5,3 +5,4 @@ selenuim
 selenium-stealth
 playsound==1.2.2 
 requests
+opencv-python
