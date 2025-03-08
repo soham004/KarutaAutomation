@@ -10,8 +10,6 @@ from selenium.webdriver.common.keys import Keys
 import random
 import easyocr
 import requests
-from io import BytesIO
-from PIL import Image
 import numpy as np
 from playsound import playsound
 import cv2
