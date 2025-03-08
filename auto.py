@@ -173,7 +173,13 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
     if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
             raise Exception("Queen's Right Leg stats Not Found")
     tprint("Queen's Right Leg Stats Found", colourCode=bcolors.OKGREEN)
-
+    droppedStatsMsg = messeges[statindex]
+    wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
+    wishDict = {
+        0:int(wishStatsElements[0].text.replace('♡','')),
+        1:int(wishStatsElements[1].text.replace('♡','')),
+        2:int(wishStatsElements[2].text.replace('♡','')),
+    }
     cardsMsg = messeges[(statindex-1)]
 
 
@@ -213,13 +219,7 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
         tprint(f"Found reaction button {i}", colourCode=bcolors.OKGREEN)
         i = i+1
     print("")
-    droppedStatsMsg = messeges[statindex]
-    wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
-    wishDict = {
-        0:int(wishStatsElements[0].text.replace('♡','')),
-        1:int(wishStatsElements[1].text.replace('♡','')),
-        2:int(wishStatsElements[2].text.replace('♡','')),
-    }
+    
     for key in wishDict:
         tprint(f"Cars {key+1} Wishlisted: {wishDict[key]}", colourCode=bcolors.OKGREEN)
     if(min(cardNum1, cardNum2, cardNum3)<1000):
