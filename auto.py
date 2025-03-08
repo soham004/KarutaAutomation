@@ -59,6 +59,41 @@ def ocr(img, boundingBox):
 
     return results
 
+def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
+    """Return a sharpened version of the image, using an unsharp mask."""
+    blurred = cv2.GaussianBlur(image, kernel_size, sigma)
+    sharpened = float(amount + 1) * image - float(amount) * blurred
+    sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
+    sharpened = np.minimum(sharpened, 255 * np.ones(sharpened.shape))
+    sharpened = sharpened.round().astype(np.uint8)
+    if threshold > 0:
+        low_contrast_mask = np.absolute(image - blurred) < threshold
+        np.copyto(sharpened, image, where=low_contrast_mask)
+    return sharpened
+
+def ocr(image):
+    numArr = []
+    for i in range(0,3):
+        length = 60
+        if i == 0:
+            x = 153
+        elif i == 1:
+            x = 427
+        else:
+            x = 701
+        cropped = image[372:385, x:x+length]
+        upscaled = cv2.resize(cropped, (0,0), fx = 8, fy = 8)
+        gray = cv2.cvtColor(upscaled, cv2.COLOR_RGB2GRAY)
+        _, thresholded = cv2.threshold(gray, 64, 255,
+            cv2.THRESH_BINARY_INV)
+
+        blurred = cv2.GaussianBlur(thresholded, (3, 3), 1)
+        sharpened = unsharp_mask(blurred, kernel_size=(3,3))
+
+        OcrImage = sharpened
+        results = reader.readtext(OcrImage, allowlist='0123456789. ', min_size = 5)
+        numArr.append(int((results[0][1].lstrip().split(" ")[0].split(".")[0][:5])))
+    return numArr
 
 def countdown(t): 
     
@@ -148,22 +183,18 @@ while loop:
         tprint(f"Card Image Url - {cardImageUrl}")
 
         cardImageData = requests.get(cardImageUrl).content
-        im = Image.open(BytesIO(cardImageData))
-        # cardNum1CropBox = (158, 371, 197, 382)
-        # cardNum2CropBox = (432, 371, 471, 382)
-        # cardNum3CropBox = (706, 371, 745, 382)
-        bound = (100,362,800,393)
-        cardnumData = ocr(im, bound)
+        im = cv2.imread(BytesIO(cardImageData))
+        cardnumData = ocr(im)
         try:
-            cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            cardNum1 = cardnumData[0]
         except IndexError:
             cardNum1 = 1
         try:
-            cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            cardNum2 = cardnumData[1]
         except IndexError:
             cardNum2 = 1
         try:
-            cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+            cardNum3 = cardnumData[2]
         except IndexError:
             cardNum3 = 1
         tprint(f"Card 1: {cardNum1}")
@@ -224,19 +255,19 @@ while loop:
             tprint(f"Card Image Url - {cardImageUrl}")
 
             cardImageData = requests.get(cardImageUrl).content
-            im = Image.open(BytesIO(cardImageData))
-            bound = (100,362,800,393)
-            cardnumData = ocr(im, bound)
+            cardImageData = requests.get(cardImageUrl).content
+            im = cv2.imread(BytesIO(cardImageData))
+            cardnumData = ocr(im)
             try:
-                cardNum1 = int(cardnumData[0][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+                cardNum1 = cardnumData[0]
             except IndexError:
                 cardNum1 = 1
             try:
-                cardNum2 = int(cardnumData[1][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+                cardNum2 = cardnumData[1]
             except IndexError:
                 cardNum2 = 1
             try:
-                cardNum3 = int(cardnumData[2][1].split(" ")[0].split(".")[0].replace("Z", "7").replace("O", "0").replace("S", "5").replace("B", "8").replace("I", "1").replace("L", "1").replace("G", "6").replace("A", "4").replace("D", "0").replace("Q", "0").replace("U", "0").replace("T", "1").replace("J", "1").replace("C", "0"))
+                cardNum3 = cardnumData[2]
             except IndexError:
                 cardNum3 = 1
 
@@ -262,8 +293,9 @@ while loop:
                     .send_keys(Keys.RETURN)\
                     .perform()
         except Exception as e:
+            tprint(e)
             try:
-                tprint("Error, trying to select random card")
+                tprint("Error, trying to select random card in second last msg")
                 cardsMsg = messeges[(statindex-1)]
                 reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                 for reactionButton in reactionButtons:
@@ -280,8 +312,9 @@ while loop:
                         .perform()
                     
             except Exception as e:
+                tprint(e)
                 try:
-                    tprint("Error, trying to select random card")
+                    tprint("Error, trying to select random card in last msg")
                     cardsMsg = messeges[(statindex)]
                     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
                     for reactionButton in reactionButtons:
