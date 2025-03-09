@@ -391,6 +391,7 @@ def randomGrab(statindex):
     reactionButtons[cardindex].click()
 
 while loop:
+    print("\n\n\n")
     internetConnected = is_connected(REMOTE_SERVER)
     if not internetConnected:
         tprint("Internet not connected", colourCode=bcolors.FAIL)
@@ -401,7 +402,6 @@ while loop:
     else:
         tprint("Internet connected", colourCode=bcolors.OKGREEN)
     playsound(notificationPath) if notify else None
-    print("\n\n\n")
     tprint("Dropping Cards.....", colourCode=bcolors.OKGREEN)
 
     ActionChains(driver)\
