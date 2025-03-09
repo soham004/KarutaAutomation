@@ -26,6 +26,8 @@ import requests
 import numpy as np
 from playsound import playsound
 import cv2
+import logging
+import socket
 
 
 
@@ -41,7 +43,11 @@ except:
     with open('discord_config.json') as f:
         data = json.load(f)
 
+FORMAT = '%(asctime)s : %(message)s'
 
+REMOTE_SERVER = "www.discord.com"
+
+logging.basicConfig(format=FORMAT,filename='auto.log', level=logging.INFO)
 # Global Variables
 discord_email = data['email']
 discord_password = data['password']
@@ -84,19 +90,23 @@ def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     return sharpened
 
 def ocr(image):
-    numArr = []
+    printArr = []
+    genArr = []
     for i in range(0,3):
-        length = 60
+        outputString = ""
+        length = 85
+        y = 365
         if i == 0:
-            x = 153
+            x = 155
         elif i == 1:
-            x = 427
+            x = 429
         else:
-            x = 701
-        cropped = image[372:385, x:x+length]
+            x = 703
+        cropped = image[y:y+20, x:x+length]
         upscaled = cv2.resize(cropped, (0,0), fx = 8, fy = 8)
         gray = cv2.cvtColor(upscaled, cv2.COLOR_RGB2GRAY)
-        _, thresholded = cv2.threshold(gray, 64, 255,
+        lowerThreshold = 64
+        _, thresholded = cv2.threshold(gray, lowerThreshold, 250,
             cv2.THRESH_BINARY_INV)
 
         blurred = cv2.GaussianBlur(thresholded, (3, 3), 1)
@@ -104,8 +114,27 @@ def ocr(image):
 
         OcrImage = sharpened
         results = reader.readtext(OcrImage, allowlist='0123456789. ', min_size = 5)
-        numArr.append(int((results[0][1].lstrip().split(" ")[0].split(".")[0][:5])))
-    return numArr
+        totalConfidence = 0
+        for result in results:
+            outputString += "."
+            outputString += result[1]
+            totalConfidence += result[2]
+        outputString = outputString.strip().strip('.').replace(" ", "").replace("..",".")
+        try:
+            printArr.append(int(outputString.split(".")[0]))
+        except ValueError:
+            print("ValueError")
+            printArr.append(90000)
+        except IndexError:
+            print("IndexError")
+            printArr.append(90000)
+        try:
+            genArr.append(int(outputString.split(".")[1]))
+        except ValueError:
+            genArr.append(1)
+        except IndexError:
+            genArr.append(1)
+    return printArr, genArr
 
 def countdown(t): 
     
@@ -119,6 +148,27 @@ def countdown(t):
 def tprint(string, colourCode=bcolors.ENDC):
     """Takes a string and prints it with a timestamp prefix."""
     print(colourCode , '[{}] {}'.format(time.strftime("%Y-%m-%d %H:%M:%S") , string))
+    if (colourCode == bcolors.FAIL):
+        logging.error(string)
+    elif (colourCode == bcolors.OKGREEN or colourCode == bcolors.OKBLUE or colourCode == bcolors.OKCYAN or colourCode == bcolors.ENDC):
+        logging.info(string)
+    elif (colourCode == bcolors.WARNING):
+        logging.warning(string)
+
+
+def is_connected(hostname):
+  try:
+    # See if we can resolve the host name - tells us if there is
+    # A DNS listening
+    host = socket.gethostbyname(hostname)
+    # Connect to the host - tells us if the host is actually reachable
+    s = socket.create_connection((host, 80), 2)
+    s.close()
+    return True
+  except Exception:
+     pass # We ignore any errors, returning False
+  return False
+
 
 options = webdriver.ChromeOptions()
 
@@ -185,12 +235,12 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
 
     cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
     tprint(f"Card Image Url - {cardImageUrl}", colourCode=bcolors.OKBLUE)
-
+    print("")
     resp = requests.get(cardImageUrl, stream=True).raw
     im = np.asarray(bytearray(resp.read()), dtype="uint8")
     im = cv2.imdecode(im, cv2.IMREAD_COLOR)
 
-    cardnumData = ocr(im)
+    cardnumData, genData = ocr(im)
 
     try:
         cardNum1 = cardnumData[0]
@@ -204,6 +254,10 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
         cardNum3 = cardnumData[2]
     except IndexError:
         cardNum3 = 1
+    cardGen1 = genData[0]
+    cardGen2 = genData[1]
+    cardGen3 = genData[2]
+
     tprint(f"Card 1: {cardNum1}")
     tprint(f"Card 2: {cardNum2}")
     tprint(f"Card 3: {cardNum3}")
@@ -212,7 +266,11 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
         1:cardNum2,
         2:cardNum3,
     }
-
+    print("")
+    tprint(f"Card 1 Gen: {cardGen1}")
+    tprint(f"Card 2 Gen: {cardGen2}")
+    tprint(f"Card 3 Gen: {cardGen3}")
+    print("")
     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
     i=1
     for reactionButton in reactionButtons:
@@ -227,15 +285,16 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
         bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
     else:
         aggregateWishDict = {
-            0:((100000-cardNum1)/10000)+wishDict[0],
-            1:((100000-cardNum2)/10000)+wishDict[1],
-            2:((100000-cardNum3)/10000)+wishDict[2],
+            0:((100000-cardNum1)/10000)+(wishDict[0])+(cardGen1/2),
+            1:((100000-cardNum2)/10000)+(wishDict[1])+(cardGen2/2),
+            2:((100000-cardNum3)/10000)+(wishDict[2])+(cardGen3/2),
         }
-        tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]), colourCode=bcolors.OKGREEN)
-        tprint("Card 2 Aggregate Points: {}".format(aggregateWishDict[1]), colourCode=bcolors.OKGREEN)
-        tprint("Card 3 Aggregate Points: {}".format(aggregateWishDict[2]), colourCode=bcolors.OKGREEN)
+        print("")
+        tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]), colourCode=bcolors.OKBLUE)
+        tprint("Card 2 Aggregate Points: {}".format(aggregateWishDict[1]), colourCode=bcolors.OKBLUE)
+        tprint("Card 3 Aggregate Points: {}".format(aggregateWishDict[2]), colourCode=bcolors.OKBLUE)
         bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
-
+    print("")
     tprint(f"Best card is: {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
     tprint(f"Clicking {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
     reactionButtons[bestCardIndex].click()
@@ -256,7 +315,8 @@ def ocrGrabWithoutRightLeg(statindex):
     im = np.asarray(bytearray(resp.read()), dtype="uint8")
     im = cv2.imdecode(im, cv2.IMREAD_COLOR)
 
-    cardnumData = ocr(im)
+    cardnumData, genData = ocr(im)
+
     try:
         cardNum1 = cardnumData[0]
     except IndexError:
@@ -269,7 +329,12 @@ def ocrGrabWithoutRightLeg(statindex):
         cardNum3 = cardnumData[2]
     except IndexError:
         cardNum3 = 1
-
+    cardGen1 = genData[0]
+    cardGen2 = genData[1]
+    cardGen3 = genData[2]
+    
+    
+    print("")
     tprint(f"Card 1: {cardNum1}", colourCode=bcolors.OKGREEN)
     tprint(f"Card 2: {cardNum2}", colourCode=bcolors.OKGREEN)
     tprint(f"Card 3: {cardNum3}", colourCode=bcolors.OKGREEN)
@@ -278,14 +343,33 @@ def ocrGrabWithoutRightLeg(statindex):
         1:cardNum2,
         2:cardNum3,
     }
-    bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
+    print("")
+    tprint(f"Card 1 Gen: {cardGen1}", colourCode=bcolors.OKCYAN)
+    tprint(f"Card 2 Gen: {cardGen2}", colourCode=bcolors.OKCYAN)
+    tprint(f"Card 3 Gen: {cardGen3}", colourCode=bcolors.OKCYAN)
+    print("")
+    if(min(cardNum1, cardNum2, cardNum3)<1000):
+        tprint("Found a low print card.", colourCode=bcolors.OKBLUE)
+        bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
+    else:
+        aggregateWishDict = {
+            0:((100000-cardNum1)/10000)+(cardGen1),
+            1:((100000-cardNum2)/10000)+(cardGen2),
+            2:((100000-cardNum3)/10000)+(cardGen3),
+        }
+        print("")
+        tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]), colourCode=bcolors.OKBLUE)
+        tprint("Card 2 Aggregate Points: {}".format(aggregateWishDict[1]), colourCode=bcolors.OKBLUE)
+        tprint("Card 3 Aggregate Points: {}".format(aggregateWishDict[2]), colourCode=bcolors.OKBLUE)
+        bestCardIndex = max(aggregateWishDict, key=aggregateWishDict.get)
+    print("")
     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
     i=1
     for reactionButton in reactionButtons:
         tprint(f"Found reaction button {i}", colourCode=bcolors.OKGREEN)
         i = i+1
-    
-    tprint(f"Best card is: {bestCardIndex+1} with {cardsNumDict[bestCardIndex]} print", colourCode=bcolors.OKBLUE)
+    print("")
+    tprint(f"Best card is: {bestCardIndex+1} with {cardsNumDict[bestCardIndex]} print and gen: {genData[bestCardIndex]}.", colourCode=bcolors.OKBLUE)
     tprint(f"Clicking {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
     reactionButtons[bestCardIndex].click()
     if (cardsNumDict[bestCardIndex]>60000):
@@ -307,6 +391,15 @@ def randomGrab(statindex):
     reactionButtons[cardindex].click()
 
 while loop:
+    internetConnected = is_connected(REMOTE_SERVER)
+    if not internetConnected:
+        tprint("Internet not connected", colourCode=bcolors.FAIL)
+        playsound(notificationPath) if notify else None
+        tprint("Waiting 10s for internet to connect", colourCode=bcolors.OKCYAN)
+        countdown(10)
+        continue
+    else:
+        tprint("Internet connected", colourCode=bcolors.OKGREEN)
     playsound(notificationPath) if notify else None
     print("\n\n\n")
     tprint("Dropping Cards.....", colourCode=bcolors.OKGREEN)
