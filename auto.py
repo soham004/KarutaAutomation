@@ -30,12 +30,14 @@ import logging
 import socket
 
 
-
+# Global Variables
 print(bcolors.OKGREEN+"Starting Bot")
 print(bcolors.OKGREEN+"Initialising OCR....")
+
 reader = easyocr.Reader(['en'],gpu=False, verbose=False)
 
 print("Reading Config....")
+
 try:
     with open('config.json') as f:
         data = json.load(f)
@@ -48,7 +50,7 @@ FORMAT = '%(asctime)s : %(message)s'
 REMOTE_SERVER = "www.discord.com"
 
 logging.basicConfig(format=FORMAT,filename='auto.log', level=logging.INFO)
-# Global Variables
+
 discord_email = data['email']
 discord_password = data['password']
 drop_delay = data['dropDelay']
@@ -61,21 +63,30 @@ notificationPath = data['notificationPath']
 notify = data['notify']
 dropToGrabDelay = data['dropToGrabDelay']
 
-def ocr(img, boundingBox):
-    img1 = np.array(img.crop(boundingBox))
+options = webdriver.ChromeOptions()
 
-    gray = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
+if headlessRun:
+    options.add_argument("--headless=new")
+options.add_argument("start-maximized")
+options.add_argument("--disable-blink-features=AutomationControlled") 
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option("useAutomationExtension", False) 
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('--ignore-ssl-errors')
+if not verbose:
+    options.add_argument('log-level=3')
 
-    # Apply thresholding (binary inversion)
-    _, thresh = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
-    # Apply morphological operations to remove noise
-    kernel = np.ones((1, 1), np.uint8)
-    processed_img = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+driver = webdriver.Chrome(options=options) 
+stealth(
+    driver,
+    languages=["en-US", "en"],
+    vendor="Google Inc.",
+    platform="Win32",
+    webgl_vendor="Google Inc. (Intel)",
+    renderer="ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A8) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    fix_hairline=True,
+)
 
-    
-    results = reader.readtext(processed_img, allowlist='0123456789 ', min_size = 5)
-
-    return results
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
@@ -155,68 +166,36 @@ def tprint(string, colourCode=bcolors.ENDC):
     elif (colourCode == bcolors.WARNING):
         logging.warning(string)
 
-
 def is_connected(hostname):
-  try:
+    try:
     # See if we can resolve the host name - tells us if there is
     # A DNS listening
-    host = socket.gethostbyname(hostname)
-    # Connect to the host - tells us if the host is actually reachable
-    s = socket.create_connection((host, 80), 2)
-    s.close()
-    return True
-  except Exception:
-     pass # We ignore any errors, returning False
-  return False
+        host = socket.gethostbyname(hostname)
+        # Connect to the host - tells us if the host is actually reachable
+        s = socket.create_connection((host, 80), 2)
+        s.close()
+        return True
+    except Exception:
+        pass # We ignore any errors, returning False
+    return False
 
+def loginToDiscord():
+    loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
 
-options = webdriver.ChromeOptions()
+    loginEmailField.send_keys(discord_email)
 
-if headlessRun:
-    options.add_argument("--headless=new")
-options.add_argument("start-maximized")
-options.add_argument("--disable-blink-features=AutomationControlled") 
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_experimental_option("useAutomationExtension", False) 
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--ignore-ssl-errors')
-if not verbose:
-    options.add_argument('log-level=3')
+    driver.implicitly_wait(2)
 
-driver = webdriver.Chrome(options=options) 
-stealth(
-    driver,
-    languages=["en-US", "en"],
-    vendor="Google Inc.",
-    platform="Win32",
-    webgl_vendor="Google Inc. (Intel)",
-    renderer="ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A8) Direct3D11 vs_5_0 ps_5_0, D3D11)",
-    fix_hairline=True,
-)
+    passwordField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, 'uid_34')))
+    passwordField.send_keys(discord_password)
 
-driver.get(url)
+    driver.implicitly_wait(2)
 
-loginEmailField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "uid_32")))
+    # loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/div/form/div[2]/div/div[1]/div[2]/button[2]')))
+    loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
+    loginButton.click()
 
-loginEmailField.send_keys(discord_email)
-
-driver.implicitly_wait(2)
-
-passwordField = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, 'uid_34')))
-passwordField.send_keys(discord_password)
-
-driver.implicitly_wait(2)
-
-# loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app-mount"]/div[2]/div[1]/div[1]/div/div/div/div/form/div[2]/div/div[1]/div[2]/button[2]')))
-loginButton = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[type="submit"]')))
-loginButton.click()
-
-tprint("Logged in", colourCode=bcolors.OKGREEN)
-
-WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
-
-loop=True
-
+    tprint("Logged in", colourCode=bcolors.OKGREEN)
 
 def ocrGrabFromSecondLastWithRightLeg(statindex):
 
@@ -390,6 +369,16 @@ def randomGrab(statindex):
     tprint(f"Clicking {cardindex}", colourCode=bcolors.WARNING)
     reactionButtons[cardindex].click()
 
+
+
+driver.get(url)
+
+loginToDiscord()
+
+WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
+
+
+loop=True
 while loop:
     print("\n\n\n")
     internetConnected = is_connected(REMOTE_SERVER)
@@ -403,7 +392,7 @@ while loop:
         tprint("Internet connected", colourCode=bcolors.OKGREEN)
     playsound(notificationPath) if notify else None
     tprint("Dropping Cards.....", colourCode=bcolors.OKGREEN)
-
+    print("")
     ActionChains(driver)\
         .send_keys("kd")\
         .send_keys(Keys.RETURN)\
@@ -427,17 +416,17 @@ while loop:
                 tprint("Error! Trying to select card in second last msg", colourCode=bcolors.WARNING)
                 ocrGrabWithoutRightLeg((statindex-1)) # Ocr Grab from second last element
             except Exception as e:
-                tprint(e)
+                tprint(e, colourCode=bcolors.FAIL)
                 try:
                     tprint("Error! Trying to select random card in second last msg", colourCode=bcolors.WARNING)
                     randomGrab(statindex-1)
                 except Exception as e:
-                    tprint(e)
+                    tprint(e, colourCode=bcolors.FAIL)
                     try:
                         tprint("Error, trying to select random card in last msg", colourCode=bcolors.WARNING)
                         randomGrab(statindex)
                     except Exception as e:
-                        tprint(e)
+                        tprint(e,colourCode=bcolors.FAIL)
                         tprint("Cannot find cards to collect", colourCode=bcolors.FAIL)
     
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
