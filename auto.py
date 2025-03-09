@@ -290,9 +290,9 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
         bestCardIndex = min(cardsNumDict, key=cardsNumDict.get)
     else:
         aggregateWishDict = {
-            0:((100000-cardNum1)/10000)+(wishDict[0])+(cardGen1/2),
-            1:((100000-cardNum2)/10000)+(wishDict[1])+(cardGen2/2),
-            2:((100000-cardNum3)/10000)+(wishDict[2])+(cardGen3/2),
+            0:((100000-cardNum1)/10000)+(wishDict[0])+(cardGen1),
+            1:((100000-cardNum2)/10000)+(wishDict[1])+(cardGen2),
+            2:((100000-cardNum3)/10000)+(wishDict[2])+(cardGen3),
         }
         print("")
         tprint("Card 1 Aggregate Points: {}".format(aggregateWishDict[0]), colourCode=bcolors.OKBLUE)
