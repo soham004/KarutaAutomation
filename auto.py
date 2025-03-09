@@ -53,12 +53,15 @@ logging.basicConfig(format=FORMAT,filename='auto.log', level=logging.INFO)
 
 discord_email = data['email']
 discord_password = data['password']
+verbose = data['verbose']
+url = data['karutaPrivateServerTextChannelLink']
+headlessRun = data['headlessRun']
+
 drop_delay = data['dropDelay']
 randomDropDelayMin = data['randomDropDelayMin']
 randomDropDelayMax = data['randomDropDelayMax']
-url = data['karutaPrivateServerTextChannelLink']
-headlessRun = data['headlessRun']
-verbose = data['verbose']
+lowerLimitForBurnTag = data['lowerLimitForBurnTag']
+burnTagName = data['burnTagName']
 notificationPath = data['notificationPath']
 notify = data['notify']
 dropToGrabDelay = data['dropToGrabDelay']
@@ -87,6 +90,29 @@ stealth(
     fix_hairline=True,
 )
 
+def loadDynamicData():
+    global drop_delay
+    global randomDropDelayMin
+    global randomDropDelayMax
+    global lowerLimitForBurnTag
+    global burnTagName
+    global notificationPath
+    global notify
+    global dropToGrabDelay
+    try:
+        with open('config.json') as f:
+            data = json.load(f)
+    except:
+        with open('discord_config.json') as f:
+            data = json.load(f)
+    drop_delay = data['dropDelay']
+    randomDropDelayMin = data['randomDropDelayMin']
+    randomDropDelayMax = data['randomDropDelayMax']
+    lowerLimitForBurnTag = data['lowerLimitForBurnTag']
+    burnTagName = data['burnTagName']
+    notificationPath = data['notificationPath']
+    notify = data['notify']
+    dropToGrabDelay = data['dropToGrabDelay']
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
@@ -277,11 +303,11 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
     tprint(f"Best card is: {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
     tprint(f"Clicking {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
     reactionButtons[bestCardIndex].click()
-    if (cardsNumDict[bestCardIndex]>60000):
+    if (cardsNumDict[bestCardIndex]>lowerLimitForBurnTag):
         time.sleep(5)
         tprint("Adding burn tag", colourCode=bcolors.WARNING)
         ActionChains(driver)\
-            .send_keys("kt burn")\
+            .send_keys(f"kt {burnTagName}")\
             .send_keys(Keys.RETURN)\
             .perform()
 
@@ -351,11 +377,11 @@ def ocrGrabWithoutRightLeg(statindex):
     tprint(f"Best card is: {bestCardIndex+1} with {cardsNumDict[bestCardIndex]} print and gen: {genData[bestCardIndex]}.", colourCode=bcolors.OKBLUE)
     tprint(f"Clicking {bestCardIndex+1}", colourCode=bcolors.OKGREEN)
     reactionButtons[bestCardIndex].click()
-    if (cardsNumDict[bestCardIndex]>60000):
+    if (cardsNumDict[bestCardIndex]>lowerLimitForBurnTag):
         time.sleep(5)
         tprint("Adding burn tag", colourCode=bcolors.WARNING)
         ActionChains(driver)\
-            .send_keys("kt burn")\
+            .send_keys(f"kt {burnTagName}")\
             .send_keys(Keys.RETURN)\
             .perform()
 
@@ -380,6 +406,7 @@ WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, '
 
 loop=True
 while loop:
+    loadDynamicData()
     print("\n\n\n")
     internetConnected = is_connected(REMOTE_SERVER)
     if not internetConnected:

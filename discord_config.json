@@ -1,13 +1,16 @@
 {
     "email": "someone@example.com",
     "password": "password",
-    "dropToGrabDelay": 10,
+    "karutaPrivateServerTextChannelLink": "https://discord.com/channels/{privateServer}/{karutaTextChannel}",
+    "verbose": false,
+    "headlessRun": true,
+    
     "dropDelay": 1820,
+    "dropToGrabDelay": 10,
     "randomDropDelayMin": 30,
     "randomDropDelayMax": 200,
-    "karutaPrivateServerTextChannelLink": "https://discord.com/channels/{privateServer}/{karutaTextChannel}",
-    "headlessRun": true,
-    "verbose": false,
+    "lowerLimitForBurnTag": 10000,
+    "burnTagName": "burn",
     "notificationPath": "noti.wav",
-    "notify": true
+    "notify": false
 }
