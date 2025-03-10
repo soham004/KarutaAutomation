@@ -284,18 +284,18 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
     cardGen2 = genData[1]
     cardGen3 = genData[2]
 
-    tprint(f"Card 1: {cardNum1}")
-    tprint(f"Card 2: {cardNum2}")
-    tprint(f"Card 3: {cardNum3}")
+    tprint(f"Card 1: {cardNum1}", colourCode=bcolors.OKCYAN)
+    tprint(f"Card 2: {cardNum2}", colourCode=bcolors.OKCYAN)
+    tprint(f"Card 3: {cardNum3}", colourCode=bcolors.OKCYAN)
     cardsNumDict = {
         0:cardNum1,
         1:cardNum2,
         2:cardNum3,
     }
     print("")
-    tprint(f"Card 1 Gen: {cardGen1}")
-    tprint(f"Card 2 Gen: {cardGen2}")
-    tprint(f"Card 3 Gen: {cardGen3}")
+    tprint(f"Card 1 Gen: {cardGen1}", colourCode=bcolors.OKCYAN)
+    tprint(f"Card 2 Gen: {cardGen2}", colourCode=bcolors.OKCYAN)
+    tprint(f"Card 3 Gen: {cardGen3}", colourCode=bcolors.OKCYAN)
     print("")
     reactionButtons = cardsMsg.find_elements(By.CLASS_NAME, 'reactionInner__23977')
     i=1
