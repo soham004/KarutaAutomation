@@ -175,7 +175,6 @@ def ocr(image):
     return printArr, genArr
 
 def countdown(t): 
-    
     while t: 
         mins, secs = divmod(t, 60) 
         timer = '{:02d}:{:02d}'.format(mins, secs) 
@@ -223,16 +222,6 @@ def loginToDiscord():
     loginButton.click()
 
     tprint("Logged in", colourCode=bcolors.OKGREEN)
-
-# def countdown_timer(seconds, stop_event):
-#     for i in range(seconds, 0, -1):
-#         mins, secs = divmod(i, 60) 
-#         if stop_event.is_set():
-#             break  # Stop countdown if input is received
-#         sys.stdout.write(f"\rTime left: {mins}:{secs}. Press Enter to Drop Now... ")
-#         sys.stdout.flush()
-#         time.sleep(1)
-#     print("\n", end="")
 
 def wait_for_input(timeout):
     """Waits for Enter key press with a timeout while displaying a countdown (Windows version)."""
@@ -438,9 +427,7 @@ WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, '
 
 loop=True
 while loop:
-    waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
-    tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
-    wait_for_input(waitTime)
+    
     loadDynamicData()
     print("\n\n\n")
     internetConnected = is_connected(REMOTE_SERVER)
@@ -474,6 +461,7 @@ while loop:
             tprint("Trying to select card in last msg", colourCode=bcolors.WARNING)
             ocrGrabWithoutRightLeg(statindex) # Ocr Grab from last element
         except Exception as e:
+            tprint(e, colourCode=bcolors.FAIL)
             try:
                 tprint("Error! Trying to select card in second last msg", colourCode=bcolors.WARNING)
                 ocrGrabWithoutRightLeg((statindex-1)) # Ocr Grab from second last element
@@ -490,6 +478,8 @@ while loop:
                     except Exception as e:
                         tprint(e,colourCode=bcolors.FAIL)
                         tprint("Cannot find cards to collect", colourCode=bcolors.FAIL)
-    
+    waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
+    tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
+    wait_for_input(waitTime)
 
 driver.quit()

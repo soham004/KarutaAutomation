@@ -3,3 +3,4 @@ test.py
 ocr.py
 *.jpg
 *.log
+downloaded_files/
