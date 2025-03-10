@@ -29,7 +29,7 @@ import cv2
 import logging
 import socket
 import sys
-import threading
+import msvcrt
 
 # Global Variables
 print(bcolors.OKGREEN+"Starting Bot")
@@ -224,38 +224,36 @@ def loginToDiscord():
 
     tprint("Logged in", colourCode=bcolors.OKGREEN)
 
-def countdown_timer(seconds, stop_event):
-    for i in range(seconds, 0, -1):
-        mins, secs = divmod(i, 60) 
-        if stop_event.is_set():
-            break  # Stop countdown if input is received
-        sys.stdout.write(f"\rTime left: {mins}:{secs}. Press Enter to Drop Now... ")
-        sys.stdout.flush()
-        time.sleep(1)
-    print("\n", end="")
+# def countdown_timer(seconds, stop_event):
+#     for i in range(seconds, 0, -1):
+#         mins, secs = divmod(i, 60) 
+#         if stop_event.is_set():
+#             break  # Stop countdown if input is received
+#         sys.stdout.write(f"\rTime left: {mins}:{secs}. Press Enter to Drop Now... ")
+#         sys.stdout.flush()
+#         time.sleep(1)
+#     print("\n", end="")
 
 def wait_for_input(timeout):
-    """Waits for Enter key press with a timeout."""
-    input_received = threading.Event()
-    
-    def get_input():
-        input()
-        input_received.set()
+    """Waits for Enter key press with a timeout while displaying a countdown (Windows version)."""
+    start_time = time.time()
+    while True:
+        remaining_time = timeout - (time.time() - start_time)
+        if remaining_time <= 0:
+            tprint("\nTime's up!.", colourCode=bcolors.OKCYAN)
+            return False  # Timeout reached
+        mins, secs = divmod(remaining_time, 60) 
+        sys.stdout.write("\rTime left: {:02d}:{:02d} Press Enter to Drop Now... ".format(int(mins), int(secs)) )
+        sys.stdout.flush()
 
-    stop_event = threading.Event()
-    input_thread = threading.Thread(target=get_input, daemon=True)
-    countdown_thread = threading.Thread(target=countdown_timer, args=(timeout, stop_event), daemon=True)
+        # Check if a key was pressed
+        if msvcrt.kbhit():
+            key = msvcrt.getch()
+            if key == b'\r':  # Enter key is detected
+                tprint("\nUser pressed Enter!", colourCode=bcolors.OKCYAN)
+                return True  # Input received
 
-    input_thread.start()
-    countdown_thread.start()
-
-    input_thread.join(timeout)  # Wait for input or timeout
-
-    if input_received.is_set():
-        stop_event.set()  # Stop the countdown
-        tprint("User pressed Enter!", colourCode=bcolors.OKCYAN)
-    else:
-        tprint("Time's up! Continuing.....",colourCode=bcolors.OKCYAN)
+        time.sleep(0.1)  # Reduce CPU usage
 
 def ocrGrabFromSecondLastWithRightLeg(statindex):
 
@@ -440,6 +438,9 @@ WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, '
 
 loop=True
 while loop:
+    waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
+    tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
+    wait_for_input(waitTime)
     loadDynamicData()
     print("\n\n\n")
     internetConnected = is_connected(REMOTE_SERVER)
@@ -490,8 +491,5 @@ while loop:
                         tprint(e,colourCode=bcolors.FAIL)
                         tprint("Cannot find cards to collect", colourCode=bcolors.FAIL)
     
-    waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
-    tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
-    wait_for_input(waitTime)
 
 driver.quit()
