@@ -28,7 +28,8 @@ from playsound import playsound
 import cv2
 import logging
 import socket
-
+import sys
+import threading
 
 # Global Variables
 print(bcolors.OKGREEN+"Starting Bot")
@@ -222,6 +223,39 @@ def loginToDiscord():
     loginButton.click()
 
     tprint("Logged in", colourCode=bcolors.OKGREEN)
+
+def countdown_timer(seconds, stop_event):
+    for i in range(seconds, 0, -1):
+        mins, secs = divmod(i, 60) 
+        if stop_event.is_set():
+            break  # Stop countdown if input is received
+        sys.stdout.write(f"\rTime left: {mins}:{secs}. Press Enter to Drop Now... ")
+        sys.stdout.flush()
+        time.sleep(1)
+    print("\n", end="")
+
+def wait_for_input(timeout):
+    """Waits for Enter key press with a timeout."""
+    input_received = threading.Event()
+    
+    def get_input():
+        input()
+        input_received.set()
+
+    stop_event = threading.Event()
+    input_thread = threading.Thread(target=get_input, daemon=True)
+    countdown_thread = threading.Thread(target=countdown_timer, args=(timeout, stop_event), daemon=True)
+
+    input_thread.start()
+    countdown_thread.start()
+
+    input_thread.join(timeout)  # Wait for input or timeout
+
+    if input_received.is_set():
+        stop_event.set()  # Stop the countdown
+        tprint("User pressed Enter!", colourCode=bcolors.OKCYAN)
+    else:
+        tprint("Time's up! Continuing.....",colourCode=bcolors.OKCYAN)
 
 def ocrGrabFromSecondLastWithRightLeg(statindex):
 
@@ -458,6 +492,6 @@ while loop:
     
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
     tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
-    countdown(waitTime)
+    wait_for_input(waitTime)
 
 driver.quit()
