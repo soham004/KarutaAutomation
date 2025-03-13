@@ -30,6 +30,7 @@ import logging
 import socket
 import sys
 import msvcrt
+import traceback
 
 # Global Variables
 print(bcolors.OKGREEN+"Starting Bot")
@@ -456,6 +457,7 @@ while loop:
     try:
         ocrGrabFromSecondLastWithRightLeg(statindex)
     except Exception as e:
+        print(traceback.format_exc())
         tprint(e, colourCode=bcolors.FAIL)
         try:
             tprint("Trying to select card in last msg", colourCode=bcolors.WARNING)
