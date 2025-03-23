@@ -6,6 +6,7 @@ import json
 import logging
 import socket
 
+
 try:
     with open('config.json') as f:
         data = json.load(f)
