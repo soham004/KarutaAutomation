@@ -9,6 +9,24 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
+banner = """
+██╗  ██╗ █████╗ ██████╗ ██╗   ██╗████████╗ █████╗        
+██║ ██╔╝██╔══██╗██╔══██╗██║   ██║╚══██╔══╝██╔══██╗       
+█████╔╝ ███████║██████╔╝██║   ██║   ██║   ███████║       
+██╔═██╗ ██╔══██║██╔══██╗██║   ██║   ██║   ██╔══██║       
+██║  ██╗██║  ██║██║  ██║╚██████╔╝   ██║   ██║  ██║       
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝       
+                                                         
+██████╗ ██████╗  ██████╗ ██████╗ ██████╗ ███████╗██████╗ 
+██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗
+██║  ██║██████╔╝██║   ██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██╔══██╗██║   ██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+██████╔╝██║  ██║╚██████╔╝██║     ██║     ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+                                                         
+"""
+print(bcolors.OKGREEN+banner)
 print(bcolors.OKGREEN+"Importing Packages....")
 
 import json
@@ -59,6 +77,7 @@ verbose = data['verbose']
 url = data['karutaPrivateServerTextChannelLink']
 headlessRun = data['headlessRun']
 
+username = data['username']
 drop_delay = data['dropDelay']
 randomDropDelayMin = data['randomDropDelayMin']
 randomDropDelayMax = data['randomDropDelayMax']
@@ -101,6 +120,7 @@ def loadDynamicData():
     global notificationPath
     global notify
     global dropToGrabDelay
+    global username
     try:
         with open('config.json') as f:
             data = json.load(f)
@@ -115,6 +135,7 @@ def loadDynamicData():
     notificationPath = data['notificationPath']
     notify = data['notify']
     dropToGrabDelay = data['dropToGrabDelay']
+    username = data['username']
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
@@ -245,21 +266,19 @@ def wait_for_input(timeout):
 
         time.sleep(0.1)  # Reduce CPU usage
 
-def ocrGrabFromSecondLastWithRightLeg(statindex):
+def ocrGrabFromSecondLastWithRightLeg(QRLMsgIndex):
 
-    if(messeges[statindex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
+    if(messeges[QRLMsgIndex].find_elements(By.CLASS_NAME, 'username_c19a55')[1].text != "Queen's Right Leg"):
             raise Exception("Queen's Right Leg stats Not Found")
     tprint("Queen's Right Leg Stats Found", colourCode=bcolors.OKGREEN)
-    droppedStatsMsg = messeges[statindex]
+    droppedStatsMsg = messeges[QRLMsgIndex]
     wishStatsElements = droppedStatsMsg.find_elements(By.CLASS_NAME, 'inline')
     wishDict = {
         0:int(wishStatsElements[0].text.replace('♡','')),
         1:int(wishStatsElements[1].text.replace('♡','')),
         2:int(wishStatsElements[2].text.replace('♡','')),
     }
-    cardsMsg = messeges[(statindex-1)]
-
-
+    cardsMsg = messeges[(QRLMsgIndex-1)]
     cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
     tprint(f"Card Image Url - {cardImageUrl}", colourCode=bcolors.OKBLUE)
     print("")
@@ -333,8 +352,8 @@ def ocrGrabFromSecondLastWithRightLeg(statindex):
             .send_keys(Keys.RETURN)\
             .perform()
 
-def ocrGrabWithoutRightLeg(statindex):
-    cardsMsg = messeges[statindex]
+def ocrGrabWithoutRightLeg(cardMsgIndex):
+    cardsMsg = messeges[cardMsgIndex]
     cardImageUrl = cardsMsg.find_element(By.CLASS_NAME, 'originalLink_af017a').get_attribute('href')
     tprint(f"Card Image Url - {cardImageUrl}", colourCode=bcolors.OKBLUE)
 
@@ -455,34 +474,43 @@ while loop:
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
 
+    
     statindex = -1
-
-    try:
-        ocrGrabFromSecondLastWithRightLeg(statindex)
-    except Exception as e:
-        print(traceback.format_exc())
-        tprint(e, colourCode=bcolors.FAIL)
+    usernameFound = False
+    upperBound = 10
+    counter = 1
+    continueSearching = True
+    while continueSearching and counter < upperBound:
+        currentIndex = statindex-counter
+        msgId = messeges[currentIndex].get_attribute("id").split("-")[-1]
+        driver.implicitly_wait(0)
         try:
-            tprint("Trying to select card in last msg", colourCode=bcolors.WARNING)
-            ocrGrabWithoutRightLeg(statindex) # Ocr Grab from last element
-        except Exception as e:
-            tprint(e, colourCode=bcolors.FAIL)
-            try:
-                tprint("Error! Trying to select card in second last msg", colourCode=bcolors.WARNING)
-                ocrGrabWithoutRightLeg((statindex-1)) # Ocr Grab from second last element
-            except Exception as e:
-                tprint(e, colourCode=bcolors.FAIL)
-                try:
-                    tprint("Error! Trying to select random card in second last msg", colourCode=bcolors.WARNING)
-                    randomGrab(statindex-1)
-                except Exception as e:
-                    tprint(e, colourCode=bcolors.FAIL)
+            currentUser = messeges[currentIndex].find_element(By.XPATH,f'//*[@id="message-username-{msgId}"]/span').text
+            if currentUser == username:
+                tprint(f"Found {username} in {currentIndex}th msg", colourCode=bcolors.OKGREEN)
+                if(currentIndex == -2): #If card is second last msg
+                    tprint("Trying to select card in msg just after drop msg", colourCode=bcolors.WARNING)
                     try:
-                        tprint("Error, trying to select random card in last msg", colourCode=bcolors.WARNING)
-                        randomGrab(statindex)
+                        ocrGrabWithoutRightLeg(currentIndex+1)
                     except Exception as e:
-                        tprint(e,colourCode=bcolors.FAIL)
-                        tprint("Cannot find cards to collect", colourCode=bcolors.FAIL)
+                        tprint(traceback.format_exc(), colourCode=bcolors.FAIL)
+                        tprint("Trying to select RANDOM card in msg just after drop msg", colourCode=bcolors.WARNING)
+                        randomGrab(currentIndex+1)
+                else: #If card is not second last msg
+                    try:
+                        ocrGrabFromSecondLastWithRightLeg(currentIndex+2) #Queen's Right Leg is at 2 msg from the drop msg
+                    except Exception as e:
+                        tprint(traceback.format_exc(), colourCode=bcolors.FAIL)
+                        tprint("Trying to select card in msg just after drop msg", colourCode=bcolors.WARNING)
+                        ocrGrabWithoutRightLeg(currentIndex+1)
+                continueSearching = False
+                usernameFound = True
+        except Exception as e:
+            tprint(f"No UserName Found at messsage {currentIndex}", colourCode=bcolors.WARNING)
+        counter += 1
+        
+    if not usernameFound:
+        tprint("Cannot find cards to collect", colourCode=bcolors.FAIL)
     waitTime = drop_delay+random.randint(randomDropDelayMin, randomDropDelayMax)
     tprint(f"Waiting {waitTime}s for next drop", colourCode=bcolors.OKCYAN)
     wait_for_input(waitTime)
