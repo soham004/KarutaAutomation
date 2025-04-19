@@ -4,3 +4,4 @@ ocr.py
 *.jpg
 *.log
 downloaded_files/
+latest_logs/

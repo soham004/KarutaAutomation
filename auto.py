@@ -425,10 +425,13 @@ loginToDiscord()
 
 WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'messageListItem__5126c')))
 
+iniWaitTime = input("Enter initial wait time in seconds: ")
+print(f"Initial wait time: {iniWaitTime} seconds")
+countdown(int(iniWaitTime))
 
 loop=True
+
 while loop:
-    
     loadDynamicData()
     print("\n\n\n")
     internetConnected = is_connected(REMOTE_SERVER)
@@ -447,7 +450,7 @@ while loop:
         .send_keys("kd")\
         .send_keys(Keys.RETURN)\
         .perform()
-
+    print("Drop to grab delay: ", dropToGrabDelay)
     time.sleep(dropToGrabDelay)
 
     messeges = driver.find_elements(By.CLASS_NAME, 'messageListItem__5126c')
